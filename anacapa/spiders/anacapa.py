@@ -7,6 +7,7 @@ log = logging.getLogger("anacapa")
 
 import scrapy
 
+from scrapy.exceptions import CloseSpider
 from scrapy.spiders import Rule
 from scrapy.linkextractors import LinkExtractor
 from neo4jrestclient.client import GraphDatabase
@@ -23,6 +24,8 @@ class AnacapaSpider(scrapy.Spider):
     rules = [Rule(LinkExtractor(allow=['']), 'parse')]
 
     def __init__(self):
+        self.running = True
+
         self.__init_start_urls()
         self.__init_allowed_domains()
         self.__init_graph()
@@ -43,7 +46,8 @@ class AnacapaSpider(scrapy.Spider):
             conf_file = os.path.join(self.conf, 'neo4j.conf.default')
 
         if not os.path.exists(conf_file):
-            log.warning("[CRITICAL] Neo4j not initialized (configuration file not found)")
+            log.critical("Neo4j not initialized (configuration file not found)")
+            self.running = False
             return
 
         config.read(conf_file)
@@ -51,6 +55,8 @@ class AnacapaSpider(scrapy.Spider):
         try:
             section = config.options('neo4j')
         except:
+            log.critical("Neo4j configuration file lacks neo4j section")
+            self.running = False
             return
 
         self.db   = GraphDatabase(config.get('neo4j', 'url'),
@@ -92,6 +98,9 @@ class AnacapaSpider(scrapy.Spider):
         self.urls.add(u)
 
     def parse(self, response):
+        if not self.running:
+            raise CloseSpider
+
         if 'redirect_urls' in response.meta:
             self.parse_redirect(response)
             output = "[REDIRECTION] "
