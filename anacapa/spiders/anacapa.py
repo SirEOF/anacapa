@@ -33,13 +33,11 @@ class SpivSpider(scrapy.Spider):
         self.urls  = self.db.labels.create("URL")
 
     def get_or_create_url(self, url):
-        #print(url)
         url_nodes = self.urls.get(url = url)
 
         if len(url_nodes) == 1:
             return url_nodes[0]
         elif url_nodes:
-            print(url_nodes[0])
             raise LookupError("Multiple URL nodes found")
         else:
             node = self.db.node.create(url = url)
@@ -67,9 +65,6 @@ class SpivSpider(scrapy.Spider):
         self.urls.add(u)
 
     def parse(self, response):
-        #print response.xpath('//a/@href').extract()
-        #print response.xpath('//script/@src').extract()
-
         if 'redirect_urls' in response.meta:
             self.parse_redirect(response)
             output = "[REDIRECTION] "
