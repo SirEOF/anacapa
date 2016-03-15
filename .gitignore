@@ -1,0 +1,3 @@
+*.pyc
+allowed_domains.conf
+start_urls.conf
