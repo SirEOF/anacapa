@@ -12,6 +12,10 @@ try:
 except ImportError:
     import ConfigParser
 
+import logging
+
+log = logging.getLogger("anacapa")
+
 class AnacapaSpider(scrapy.Spider):
     name  = "anacapa"
     conf  = os.path.join(os.path.dirname(__file__), 'conf')
@@ -98,4 +102,4 @@ class AnacapaSpider(scrapy.Spider):
             output = "[URL] "
 
         output += response.url
-        print(output)
+        log.debug(output)
