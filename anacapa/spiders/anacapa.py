@@ -7,6 +7,11 @@ from scrapy.spiders import Rule
 from scrapy.linkextractors import LinkExtractor
 from neo4jrestclient.client import GraphDatabase
 
+try:
+    import configparser as ConfigParser
+except ImportError:
+    import ConfigParser
+
 class AnacapaSpider(scrapy.Spider):
     name  = "anacapa"
     conf  = os.path.join(os.path.dirname(__file__), 'conf')
@@ -26,9 +31,25 @@ class AnacapaSpider(scrapy.Spider):
             self.allowed_domains = (p for p in fd.read().splitlines() if p)
 
     def __init_graph(self): 
-        self.db    = GraphDatabase("http://localhost:7474", 
-                                   username = "neo4j", 
-                                   password = "anacapa")
+        config = ConfigParser.ConfigParser()
+
+        conf_file = os.path.join(self.conf, 'neo4j.conf')
+        if not os.path.exists(conf_file):
+            conf_file = os.path.join(self.conf, 'neo4j.conf.default')
+
+        if not os.path.exists(conf_file):
+            log.warning("[CRITICAL] Neo4j not initialized (configuration file not found)")
+            return
+
+        config.read(conf_file)
+        try:
+            section = config.options('neo4j')
+        except:
+            return
+
+        self.db    = GraphDatabase(config.get('neo4j', 'url'),
+                                   username = config.get('neo4j', 'username'),
+                                   password = config.get('neo4j', 'password'))
 
         self.urls  = self.db.labels.create("URL")
 
