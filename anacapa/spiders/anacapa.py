@@ -9,18 +9,21 @@ from neo4jrestclient.client import GraphDatabase
 
 class SpivSpider(scrapy.Spider):
     name  = "anacapa"
+    conf  = os.path.join(os.path.dirname(__file__), 'conf')
     rules = [Rule(LinkExtractor(allow=['']), 'parse')]
 
     def __init__(self):
-        cwd = os.path.dirname(__file__)
+        self.__init_start_urls()
+        self.__init_allowed_domains()
+        self.__init_graph()
 
-        with open(os.path.join(cwd, 'conf', 'start_urls.conf'), 'r') as fd:
+    def __init_start_urls(self):
+        with open(os.path.join(self.conf, 'start_urls.conf'), 'r') as fd:
             self.start_urls = (p for p in fd.read().splitlines() if p)
 
-        with open(os.path.join(cwd, 'conf', 'allowed_domains.conf'), 'r') as fd:
+    def __init_allowed_domains(self):
+        with open(os.path.join(self.conf, 'allowed_domains.conf'), 'r') as fd:
             self.allowed_domains = (p for p in fd.read().splitlines() if p)
-       
-        self.__init_graph()
 
     def __init_graph(self): 
         self.db    = GraphDatabase("http://localhost:7474", 
