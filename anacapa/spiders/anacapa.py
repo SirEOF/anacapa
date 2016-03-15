@@ -42,16 +42,17 @@ class AnacapaSpider(scrapy.Spider):
             return
 
         config.read(conf_file)
+
         try:
             section = config.options('neo4j')
         except:
             return
 
-        self.db    = GraphDatabase(config.get('neo4j', 'url'),
-                                   username = config.get('neo4j', 'username'),
-                                   password = config.get('neo4j', 'password'))
+        self.db   = GraphDatabase(config.get('neo4j', 'url'),
+                                  username = config.get('neo4j', 'username'),
+                                  password = config.get('neo4j', 'password'))
 
-        self.urls  = self.db.labels.create("URL")
+        self.urls = self.db.labels.create("URL")
 
     def get_or_create_url(self, url):
         url_nodes = self.urls.get(url = url)
