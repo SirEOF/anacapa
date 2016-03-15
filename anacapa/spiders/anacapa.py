@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
 import itertools
+
+import logging
+log = logging.getLogger("anacapa")
+
 import scrapy
 
 from scrapy.spiders import Rule
@@ -12,9 +16,6 @@ try:
 except ImportError:
     import ConfigParser
 
-import logging
-
-log = logging.getLogger("anacapa")
 
 class AnacapaSpider(scrapy.Spider):
     name  = "anacapa"
