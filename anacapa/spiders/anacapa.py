@@ -21,7 +21,7 @@ except ImportError:
 class AnacapaSpider(scrapy.Spider):
     name  = "anacapa"
     conf  = os.path.join(os.path.dirname(__file__), 'conf')
-    rules = [Rule(LinkExtractor(allow=['']), 'parse')]
+    rules = [Rule(LinkExtractor(allow=['']), callback = 'parse')]
 
     def __init__(self):
         self.running = True
@@ -105,8 +105,7 @@ class AnacapaSpider(scrapy.Spider):
             self.parse_redirect(response)
             output = "[REDIRECTION] "
             for url in response.meta['redirect_urls']:
-                output += "%s -> " % (url, )
-                
+                output += "%s -> " % (url, )        
         else:
             self.parse_url(response)
             output = "[URL] "
