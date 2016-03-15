@@ -1,0 +1,2 @@
+Scrapy==1.0.4
+neo4jrestclient==2.1.1
