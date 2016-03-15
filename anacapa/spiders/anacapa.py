@@ -7,7 +7,7 @@ from scrapy.spiders import Rule
 from scrapy.linkextractors import LinkExtractor
 from neo4jrestclient.client import GraphDatabase
 
-class SpivSpider(scrapy.Spider):
+class AnacapaSpider(scrapy.Spider):
     name  = "anacapa"
     conf  = os.path.join(os.path.dirname(__file__), 'conf')
     rules = [Rule(LinkExtractor(allow=['']), 'parse')]
