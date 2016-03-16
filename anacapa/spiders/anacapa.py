@@ -10,7 +10,8 @@ import scrapy
 from scrapy.exceptions import CloseSpider
 from scrapy.spiders import Rule
 from scrapy.linkextractors import LinkExtractor
-from neo4jrestclient.client import GraphDatabase
+
+from py2neo import neo4j
 
 try:
     import configparser as ConfigParser
@@ -59,43 +60,24 @@ class AnacapaSpider(scrapy.Spider):
             self.running = False
             return
 
-        self.db   = GraphDatabase(config.get('neo4j', 'url'),
-                                  username = config.get('neo4j', 'username'),
-                                  password = config.get('neo4j', 'password'))
+        neo4j.authenticate(config.get('neo4j', 'host'),
+                           config.get('neo4j', 'username'),
+                           config.get('neo4j', 'password'))
 
-        self.urls = self.db.labels.create("URL")
-
-    def get_or_create_url(self, url):
-        url_nodes = self.urls.get(url = url)
-
-        if len(url_nodes) == 1:
-            return url_nodes[0]
-        elif url_nodes:
-            raise LookupError("Multiple URL nodes found")
-        else:
-            node = self.db.node.create(url = url)
-            self.urls.add(node)
-            return node
-
-    def create_redirect_relationship(self, u1, u2):
-        if u2 in [rel.end for rel in u1.relationships.outgoing(types = ['REDIRECT'])]:
-            return
-
-        u1.relationships.create("REDIRECT", u2)
+        self.graph = neo4j.Graph(config.get('neo4j', 'url'))
 
     def parse_redirect(self, response):
         chain = response.meta['redirect_urls'] + [response.url, ]
 
         i = 0
         while i < len(chain) - 1:
-            u1 = self.get_or_create_url(url = chain[i])
-            u2 = self.get_or_create_url(url = chain[i + 1])
-            self.create_redirect_relationship(u1, u2)
+            u1 = self.graph.merge_one("URL", "URL", chain[i])
+            u2 = self.graph.merge_one("URL", "URL", chain[i + 1])
+            self.graph.create_unique(neo4j.Relationship(u1, "REDIRECT", u2))
             i += 1
 
     def parse_url(self, response):
-        u = self.db.node.create(url = response.url)
-        self.urls.add(u)
+        self.graph.merge_one("URL", "URL", response.url)
 
     def parse(self, response):
         if not self.running:
