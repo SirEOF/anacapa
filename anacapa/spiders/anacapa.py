@@ -23,6 +23,11 @@ class AnacapaSpider(scrapy.Spider):
     name  = "anacapa"
     conf  = os.path.join(os.path.dirname(__file__), 'conf')
     rules = [Rule(LinkExtractor(allow=['']), callback = 'parse')]
+    tags  = {
+		('//script', '@src'   , 'SRC'   , 'SCRIPT'),
+                ('//a'     , '@href'  , 'HREF'  , 'A'     ),
+                ('//form'  , '@action', 'ACTION', 'FORM'  ),
+            }
 
     def __init__(self):
         self.running = True
@@ -66,6 +71,18 @@ class AnacapaSpider(scrapy.Spider):
 
         self.graph = neo4j.Graph(config.get('neo4j', 'url'))
 
+    def parse_tag(self, response, tag, target, node_type, rel_type):
+        url = self.graph.merge_one("URL", "URL", response.url)
+
+        for sel in response.xpath(tag):
+            for src in sel.xpath(target).extract():
+                script = self.graph.merge_one(node_type, "URL", response.urljoin(src))
+                self.graph.create_unique(neo4j.Relationship(url, rel_type, script))
+
+    def parse_response(self, response):
+        for parms in self.tags:
+            self.parse_tag(response, *parms)
+
     def parse_redirect(self, response):
         chain = response.meta['redirect_urls'] + [response.url, ]
 
@@ -94,3 +111,5 @@ class AnacapaSpider(scrapy.Spider):
 
         output += response.url
         log.debug(output)
+
+        self.parse_response(response)
