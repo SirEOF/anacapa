@@ -7,5 +7,5 @@
 
 
 class AnacapaPipeline(object):
-    def process_item(self, item, spider):
+    def process_item(self, item, spider): #pylint:disable=unused-argument
         return item

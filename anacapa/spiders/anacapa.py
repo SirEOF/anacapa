@@ -25,8 +25,8 @@ class AnacapaSpider(scrapy.Spider):
     rules = [Rule(LinkExtractor(allow=['']), callback = 'parse')]
     tags  = {
         ('//script', '@src'   , 'SRC'   , 'SCRIPT'),
-                ('//a'     , '@href'  , 'HREF'  , 'A'     ),
-                ('//form'  , '@action', 'ACTION', 'FORM'  ),
+        ('//a'     , '@href'  , 'HREF'  , 'A'     ),
+        ('//form'  , '@action', 'ACTION', 'FORM'  ),
             }
 
     def __init__(self):
@@ -67,7 +67,7 @@ class AnacapaSpider(scrapy.Spider):
         config.read(conf_file)
 
         try:
-            section = config.options('neo4j')
+            section = config.options('neo4j') #pylint:disable=unused-variable
         except:
             log.critical("Neo4j configuration file lacks neo4j section")
             self.running = False
