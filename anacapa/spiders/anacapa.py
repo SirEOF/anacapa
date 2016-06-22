@@ -24,7 +24,7 @@ class AnacapaSpider(scrapy.Spider):
     conf  = os.path.join(os.path.dirname(__file__), 'conf')
     rules = [Rule(LinkExtractor(allow=['']), callback = 'parse')]
     tags  = {
-		('//script', '@src'   , 'SRC'   , 'SCRIPT'),
+        ('//script', '@src'   , 'SRC'   , 'SCRIPT'),
                 ('//a'     , '@href'  , 'HREF'  , 'A'     ),
                 ('//form'  , '@action', 'ACTION', 'FORM'  ),
             }
@@ -138,7 +138,7 @@ class AnacapaSpider(scrapy.Spider):
             self.parse_redirect(response)
             output = "[REDIRECTION] "
             for url in response.meta['redirect_urls']:
-                output += "%s -> " % (url, )        
+                output += "%s -> " % (url, )
         else:
             self.parse_url(response)
             output = "[URL] "
