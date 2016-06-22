@@ -93,7 +93,10 @@ class AnacapaSpider(scrapy.Spider):
 
         return "URL_UNKNOWN"
 
-    def handle_url(self, url, labels = []):
+    def handle_url(self, url, labels = None):
+        if labels is None:
+            labels = list()
+
         node = self.graph.merge_one("URL", "URL", url)
 
         node.labels.add(self.url_label(url))
