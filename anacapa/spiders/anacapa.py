@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import csv
 import itertools
 
 import logging
@@ -34,15 +35,23 @@ class AnacapaSpider(scrapy.Spider):
 
         self.__init_start_urls()
         self.__init_allowed_domains()
+        self.__init_alexa_domains()
         self.__init_graph()
 
     def __init_start_urls(self):
         with open(os.path.join(self.conf, 'start_urls.conf'), 'r') as fd:
-            self.start_urls = (p for p in fd.read().splitlines() if p)
+            self.start_urls = [p for p in fd.read().splitlines() if p]
 
     def __init_allowed_domains(self):
         with open(os.path.join(self.conf, 'allowed_domains.conf'), 'r') as fd:
-            self.allowed_domains = (p for p in fd.read().splitlines() if p)
+            self.allowed_domains = [p for p in fd.read().splitlines() if p]
+
+    def __init_alexa_domains(self):
+        self.alexa_domains = list()
+
+        with open(os.path.join(self.conf, 'top-1m.csv'), 'r') as fd:
+            reader = csv.reader(fd)
+            self.alexa_domains = [p[1] for p in reader if len(p) > 1]
 
     def __init_graph(self): 
         config = ConfigParser.ConfigParser()
@@ -71,13 +80,36 @@ class AnacapaSpider(scrapy.Spider):
 
         self.graph = neo4j.Graph(config.get('neo4j', 'url'))
 
+    def url_label(self, url):
+        url = url.lower()
+
+        for domain in list(self.allowed_domains):
+            if domain.lower() in url:
+                return "URL_ALLOWED"
+
+        for domain in self.alexa_domains:
+            if domain.lower() in url:
+                return "URL_ALEXA"
+
+        return "URL_UNKNOWN"
+
+    def handle_url(self, url, labels = []):
+        node = self.graph.merge_one("URL", "URL", url)
+
+        node.labels.add(self.url_label(url))
+        for l in labels:
+            node.labels.add(l)
+
+        self.graph.push(node)
+        return node
+
     def parse_tag(self, response, tag, target, node_type, rel_type):
-        url = self.graph.merge_one("URL", "URL", response.url)
+        url = self.handle_url(response.url)
 
         for sel in response.xpath(tag):
             for src in sel.xpath(target).extract():
-                script = self.graph.merge_one(node_type, "URL", response.urljoin(src))
-                self.graph.create_unique(neo4j.Relationship(url, rel_type, script))
+                node = self.handle_url(response.urljoin(src), labels = [node_type, ])
+                self.graph.create_unique(neo4j.Relationship(url, rel_type, node))
 
     def parse_response(self, response):
         for parms in self.tags:
@@ -88,13 +120,13 @@ class AnacapaSpider(scrapy.Spider):
 
         i = 0
         while i < len(chain) - 1:
-            u1 = self.graph.merge_one("URL", "URL", chain[i])
-            u2 = self.graph.merge_one("URL", "URL", chain[i + 1])
+            u1 = self.handle_url(chain[i])
+            u2 = self.handle_url(chain[i + 1])
             self.graph.create_unique(neo4j.Relationship(u1, "REDIRECT", u2))
             i += 1
 
     def parse_url(self, response):
-        self.graph.merge_one("URL", "URL", response.url)
+        self.handle_url(response.url)
 
     def parse(self, response):
         if not self.running:
