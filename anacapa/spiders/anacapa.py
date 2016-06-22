@@ -68,7 +68,7 @@ class AnacapaSpider(scrapy.Spider):
 
         try:
             section = config.options('neo4j') #pylint:disable=unused-variable
-        except:
+        except: #pylint:disable=bare-except
             log.critical("Neo4j configuration file lacks neo4j section")
             self.running = False
             return
