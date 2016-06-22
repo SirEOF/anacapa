@@ -1,0 +1,10 @@
+strictness: medium
+autodetect: yes
+
+pylint:
+  disable:
+    - too-many-arguments
+
+pyflakes:
+  disable:
+    - F841
